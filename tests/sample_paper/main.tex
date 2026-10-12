@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\newcommand{\method}{V-JEPA~2}
+\title{V-JEPA 2: Self-Supervised Video Models}
+\author{A. Author \and B. Author}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present \method{}, a self-supervised learning approach that learns from more than 1 million hours of internet video. % TODO: check number
+The model reaches 77.3\% top-1 accuracy on Something-Something~v2 and achieves state-of-the-art results on action anticipation~\cite{damen2022}.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+A major challenge for modern AI is to learn to understand the world and act largely by observation~\cite{lecun2022}.
+We train an encoder with a mask-denoising objective in representation space, i.e.\ we predict the embedding $s_y = f_\theta(y)$ of masked patches.
+Our main \emph{contributions} are listed below.\footnote{Code is available at \url{https://github.com/facebookresearch/vjepa2}.}
+
+\begin{itemize}
+  \item We scale pretraining to 22M videos and a 1B parameter encoder.
+  \item We show that the frozen encoder is a strong backbone for ``video question answering'' (see Fig.~\ref{fig:arch}).
+\end{itemize}
+
+% \section{Old section that was commented out}
+\iffalse
+This paragraph is disabled and must not be translated.
+\fi
+
+\input{sections/method}
+
+\section{Experiments}
+Table~\ref{tab:main} compares our approach with prior work, e.g. DINOv2 and SigLIP~2.
+\begin{table}[t]
+  \centering
+  \caption{Results on Something-Something v2 and Diving-48. Higher is better.}
+  \label{tab:main}
+  \begin{tabular}{lcc}
+    \toprule
+    Method & SSv2 & Diving-48 \\
+    \midrule
+    DINOv2 & 50.7 & 79.3 \\
+    \textbf{Ours} & \textbf{77.3} & \textbf{90.2} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{thebibliography}{9}
+\bibitem{lecun2022} Y. LeCun. A path towards autonomous machine intelligence. 2022.
+\bibitem{damen2022} D. Damen et al. Rescaling egocentric vision. IJCV, 2022.
+\end{thebibliography}
+\end{document}

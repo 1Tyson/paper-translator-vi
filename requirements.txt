@@ -1,0 +1,6 @@
+pyyaml
+# --backend vinai (default); not needed for --backend ollama / dummy
+torch
+transformers>=4.40
+sentencepiece
+protobuf

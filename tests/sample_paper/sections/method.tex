@@ -1,0 +1,17 @@
+\section{Method}
+\label{sec:method}
+Given a video $x$, we mask a large fraction of the tokens and train the predictor to minimize
+\begin{equation}
+  \mathcal{L} = \lVert P_\phi(E_\theta(x_{\text{ctx}}), \Delta) - \text{sg}(\bar{E}(x)) \rVert_1 . \label{eq:loss}
+\end{equation}
+The target encoder $\bar{E}$ is an exponential moving average of $E_\theta$.
+This prevents representation collapse without contrastive negatives.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\rule{0pt}{2cm}\rule{4cm}{0pt}}
+  \caption{Overview of the architecture. The encoder processes visible patches; the predictor outputs the missing ones.}
+  \label{fig:arch}
+\end{figure}
+
+\paragraph{Training details.} We use AdamW with a learning rate of $10^{-4}$ and a batch size of 3072 for 252k iterations.

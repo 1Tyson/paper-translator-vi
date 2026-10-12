@@ -1,0 +1,62 @@
+# Bảng thuật ngữ dùng chung cho mọi paper. Sửa thoải mái.
+# Không phân biệt hoa thường; số nhiều (-s, -es) cũng khớp.
+#
+# translate: lần đầu xuất hiện -> "bản dịch (tiếng Anh)", các lần sau -> "bản dịch".
+# keep:      giữ nguyên tiếng Anh (model dịch không nhìn thấy các từ này).
+
+translate:
+  self-supervised learning: học tự giám sát
+  supervised learning: học có giám sát
+  unsupervised learning: học không giám sát
+  representation learning: học biểu diễn
+  reinforcement learning: học tăng cường
+  deep learning: học sâu
+  machine learning: học máy
+  neural network: mạng nơ-ron
+  computer vision: thị giác máy tính
+  natural language processing: xử lý ngôn ngữ tự nhiên
+  knowledge distillation: chưng cất tri thức
+  semantic segmentation: phân đoạn ngữ nghĩa
+  object detection: phát hiện đối tượng
+  image classification: phân loại ảnh
+  depth estimation: ước lượng độ sâu
+  action recognition: nhận dạng hành động
+  action anticipation: dự đoán hành động
+  world model: mô hình thế giới
+  ablation study: thí nghiệm loại bỏ thành phần
+  loss function: hàm mất mát
+  learning rate: tốc độ học
+  ground truth: nhãn thực
+  state-of-the-art: hiện đại nhất
+  dataset: tập dữ liệu
+
+keep:
+  - encoder
+  - decoder
+  - predictor
+  - backbone
+  - transformer
+  - vision transformer
+  - attention
+  - self-attention
+  - cross-attention
+  - token
+  - patch
+  - embedding
+  - fine-tuning
+  - pretraining
+  - pre-training
+  - benchmark
+  - baseline
+  - batch
+  - batch size
+  - checkpoint
+  - linear probe
+  - linear probing
+  - attentive probe
+  - zero-shot
+  - few-shot
+  - top-1
+  - top-5
+  - EMA
+  - ViT
