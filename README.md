@@ -3,6 +3,29 @@
 Đưa vào mã arXiv (ví dụ `2506.09985` của V-JEPA 2), nhận lại **source LaTeX tiếng Việt**, file zip để mở trên
 Overleaf, và PDF (nếu máy có LaTeX). Việc dịch chạy bằng model trên máy bạn: **không gọi API trả phí, không tốn token**.
 
+## Dùng app (AppImage, không cần cài Python)
+
+1. Tải `PaperTranslatorVI-x86_64.AppImage` ở trang
+   [Releases](https://github.com/1Tyson/paper-translator-vi/releases/latest).
+2. Cho phép chạy rồi mở:
+   ```bash
+   chmod +x PaperTranslatorVI-x86_64.AppImage
+   ./PaperTranslatorVI-x86_64.AppImage
+   ```
+   Hoặc trên KDE: chuột phải → Properties → Permissions → tick "Is executable", rồi bấm đúp.
+3. Lần đầu: bấm **Cài đặt** để app tải thành phần dịch (torch + transformers, khoảng 1 GB bản CPU,
+   hoặc khoảng 3 GB nếu máy có GPU NVIDIA). Thành phần này lưu ở `~/.local/share/paper-translator-vi`, chỉ tải một lần.
+4. Nhập mã arXiv (ví dụ `2506.09985`) → bấm **Dịch → PDF**. Xong thì PDF tự mở.
+   Kết quả nằm ở `~/Documents/PaperTranslator/<mã>/`.
+
+Để xuất thẳng PDF, máy cần có LaTeX: `sudo pacman -S --needed texlive texlive-langother`.
+Nếu chưa có, app vẫn tạo file `vi-overleaf.zip` để upload lên Overleaf.
+
+Nếu AppImage báo lỗi FUSE, chạy `./PaperTranslatorVI-x86_64.AppImage --appimage-extract-and-run`
+hoặc cài `fuse2` (`sudo pacman -S fuse2`).
+
+Tự build AppImage: `./packaging/build-appimage.sh` (kết quả ở `build/`).
+
 ## Cách hoạt động
 
 ```
@@ -21,7 +44,9 @@ mã arXiv ──► tải source LaTeX (.tar.gz) từ arxiv.org/e-print
 - Bản dịch được lưu vào `cache.<backend>.json`, nên dừng giữa chừng rồi chạy lại sẽ dịch tiếp, không dịch lại từ đầu.
 - Không dịch: công thức, bảng (`tabular`), code, tài liệu tham khảo, tiêu đề paper (nằm trong preamble).
 
-## Cài đặt
+## Dùng bằng dòng lệnh
+
+### Cài đặt
 
 ```bash
 git clone https://github.com/1Tyson/paper-translator-vi
@@ -39,7 +64,7 @@ Mỗi lần mở terminal mới, chạy lại `source .venv/bin/activate` trư�
 
 Lần chạy đầu sẽ tự tải model VinAI (khoảng 1,5 GB) về `~/.cache/huggingface`. Từ lần sau chạy offline được.
 
-## Chạy
+### Chạy
 
 ```bash
 # Thử nhanh 30 câu đầu, xem chất lượng trước khi dịch cả bài

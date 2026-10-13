@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect x="40" y="16" width="160" height="208" rx="14" fill="#ffffff" stroke="#2f5d8a" stroke-width="10"/>
+  <path d="M68 60h104M68 84h104M68 108h70" stroke="#9db3c8" stroke-width="10" stroke-linecap="round"/>
+  <rect x="96" y="128" width="144" height="104" rx="18" fill="#da251d"/>
+  <text x="168" y="200" font-family="DejaVu Sans, sans-serif" font-size="58" font-weight="bold"
+        fill="#ffde00" text-anchor="middle">VI</text>
+</svg>

@@ -202,9 +202,11 @@ def compile_pdf(main_tex):
     else:
         print("No LaTeX installed: upload vi-overleaf.zip to https://www.overleaf.com instead.")
         return None
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "PYTHONHOME")}
     for cmd in cmds:
         try:
-            subprocess.run(cmd, cwd=folder, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600)
+            subprocess.run(cmd, cwd=folder, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           timeout=600)
         except subprocess.TimeoutExpired:
             print(f"{cmd[0]} timed out")
     pdf = os.path.splitext(main_tex)[0] + ".pdf"

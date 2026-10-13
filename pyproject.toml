@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paper-translator-vi"
+version = "0.2.0"
+description = "Translate arXiv papers (LaTeX source) from English to Vietnamese with local models"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pyyaml"]
+
+[project.optional-dependencies]
+gui = ["PySide6-Essentials>=6.6"]
+vinai = ["torch", "transformers>=4.40", "sentencepiece", "protobuf"]
+
+[project.scripts]
+paper-translator = "paper_translator.__main__:main"
+
+[project.gui-scripts]
+paper-translator-gui = "paper_translator.gui:main"
+
+[tool.setuptools]
+packages = ["paper_translator"]
+
+[tool.setuptools.package-data]
+paper_translator = ["glossary.yaml", "icon.svg"]
