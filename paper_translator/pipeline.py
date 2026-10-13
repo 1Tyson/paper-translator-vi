@@ -19,23 +19,31 @@ from .fetch import find_main_tex, prepare_source, read_tex, reading_order
 
 class Stats:
     def __init__(self):
-        self.sentences = self.translated = self.kept_english = self.not_translated = 0
+        self.sentences = self.translated = self.piecewise = self.kept_english = self.not_translated = 0
 
     def __str__(self):
         return (f"{self.sentences} sentences: {self.translated} translated, "
-                f"{self.kept_english} kept in English (placeholders lost), "
-                f"{self.not_translated} not translated yet")
+                f"{self.piecewise} translated piece by piece (placeholders lost in the whole sentence), "
+                f"{self.kept_english} kept in English, {self.not_translated} not translated yet")
 
 
 class Context:
-    """`lookup(masked_sentence)` returns the translation, or None if there is none."""
+    """`lookup(masked_text)` returns the translation, or None if there is none (recorded in `misses`)."""
 
     def __init__(self, lookup, glossary, sentence_level=True):
         self.lookup = lookup
         self.glossary = glossary
         self.sentence_level = sentence_level
         self.stats = Stats()
+        self.misses = []
+        self.problems = []  # (source, model output) for sentences that lost placeholders
         glossary.reset()
+
+    def _lookup(self, src):
+        vi = self.lookup(src)
+        if vi is None:
+            self.misses.append(src)
+        return vi
 
     def translate_prose(self, text):
         """Translate one paragraph (or command argument) of LaTeX prose."""
@@ -55,16 +63,39 @@ class Context:
 
     def _translate_unit(self, src):
         self.stats.sentences += 1
-        vi = self.lookup(src)
+        vi = self._lookup(src)
         if vi is None:
             self.stats.not_translated += 1
             return src
         vi = latex.clean_translation(vi)
-        if latex.placeholders(vi) != latex.placeholders(src) or not vi:
+        if vi and latex.placeholders(vi) == latex.placeholders(src):
+            self.stats.translated += 1
+            return vi
+        self.problems.append((src, vi))
+        pieces = self._piecewise(src)
+        if pieces is None:
             self.stats.kept_english += 1
             return src
-        self.stats.translated += 1
-        return vi
+        self.stats.piecewise += 1
+        return pieces
+
+    def _piecewise(self, src):
+        """Translate the text between placeholders separately, so none can be lost."""
+        out, ok = [], True
+        for part in re.split(r"(\[\[\d+\]\])", src):
+            if latex.PH_RE.fullmatch(part) or not latex.has_words(part):
+                out.append(part)
+                continue
+            vi = self._lookup(part.strip())
+            vi = None if vi is None else latex.clean_translation(vi)
+            if not vi or latex.placeholders(vi):
+                ok = False
+                out.append(part)
+                continue
+            lead = " " if part[:1].isspace() else ""
+            trail = " " if part[-1:].isspace() else ""
+            out.append(lead + vi + trail)
+        return "".join(out) if ok else None
 
 
 def vietnamese_preamble(preamble):
@@ -115,17 +146,40 @@ def translate_project(source, out_dir, backend, glossary, limit=None, chunk=32):
     files = reading_order(src, find_main_tex(src))
     texts = {p: read_tex(p) for p in files}
 
-    # Pass 1: which sentences need translating.
-    wanted = []
-    ctx = Context(lambda s: wanted.append(s) or s, glossary, backend.sentence_level)
-    for p in files:
-        translate_tex(texts[p], ctx)
-
+    # Run the LaTeX pass, translate what it was missing, repeat: the second round
+    # translates the pieces of sentences that lost placeholders as a whole.
     cache = Cache(os.path.join(out_dir, f"cache.{backend.name}.json"))
-    todo = list(dict.fromkeys(s for s in wanted if s not in cache.data))
-    if limit is not None:
-        todo = todo[:limit]
-    print(f"{len(wanted)} sentences, {len(todo)} to translate with {backend.name}")
+    budget = limit
+    for _ in range(3):
+        ctx = Context(cache.data.get, glossary, backend.sentence_level)
+        for p in files:
+            translate_tex(texts[p], ctx)
+        todo = list(dict.fromkeys(s for s in ctx.misses if s not in cache.data))
+        if budget is not None:
+            todo, budget = todo[:budget], budget - min(budget, len(todo))
+        if not todo:
+            break
+        print(f"{ctx.stats.sentences} sentences, {len(todo)} texts to translate with {backend.name}")
+        _translate_all(backend, todo, cache, chunk)
+
+    # Write the translated project.
+    if os.path.exists(dst):
+        shutil.rmtree(dst)
+    shutil.copytree(src, dst)
+    ctx = Context(cache.data.get, glossary, backend.sentence_level)
+    for p in files:
+        with open(os.path.join(dst, os.path.relpath(p, src)), "w", encoding="utf-8") as f:
+            f.write(translate_tex(texts[p], ctx))
+    with open(os.path.join(out_dir, "problems.txt"), "w", encoding="utf-8") as f:
+        f.write("Sentences whose placeholders [[n]] did not survive translation as a whole sentence.\n"
+                "They were translated piece by piece instead (or kept in English if that failed too).\n\n")
+        for src_text, vi in ctx.problems:
+            f.write(f"EN: {src_text}\nVI: {vi}\n\n")
+    shutil.make_archive(os.path.join(out_dir, "vi-overleaf"), "zip", dst)
+    return os.path.join(dst, os.path.relpath(files[0], src)), ctx.stats
+
+
+def _translate_all(backend, todo, cache, chunk):
     t0 = time.time()
     for s in range(0, len(todo), chunk):
         batch = todo[s : s + chunk]
@@ -135,17 +189,6 @@ def translate_project(source, out_dir, backend, glossary, limit=None, chunk=32):
         done = s + len(batch)
         eta = (time.time() - t0) / done * (len(todo) - done)
         print(f"  {done}/{len(todo)}  (~{eta / 60:.1f} min left)", file=sys.stderr)
-
-    # Pass 2: write the translated project.
-    if os.path.exists(dst):
-        shutil.rmtree(dst)
-    shutil.copytree(src, dst)
-    ctx = Context(cache.data.get, glossary, backend.sentence_level)
-    for p in files:
-        with open(os.path.join(dst, os.path.relpath(p, src)), "w", encoding="utf-8") as f:
-            f.write(translate_tex(texts[p], ctx))
-    shutil.make_archive(os.path.join(out_dir, "vi-overleaf"), "zip", dst)
-    return os.path.join(dst, os.path.relpath(files[0], src)), ctx.stats
 
 
 def compile_pdf(main_tex):

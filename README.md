@@ -15,7 +15,9 @@ mã arXiv ──► tải source LaTeX (.tar.gz) từ arxiv.org/e-print
          ──► translations/<id>/vi/ (LaTeX), vi-overleaf.zip, main.pdf
 ```
 
-- Câu nào model làm mất placeholder sẽ **được giữ tiếng Anh**, để file LaTeX luôn compile được.
+- Câu nào model làm mất placeholder sẽ được **dịch lại từng đoạn** nằm giữa các placeholder rồi ghép lại
+  (kém mượt hơn một chút). Nếu vẫn lỗi thì giữ tiếng Anh, để file LaTeX luôn compile được.
+  Các câu này được liệt kê trong `translations/<id>/problems.txt`.
 - Bản dịch được lưu vào `cache.<backend>.json`, nên dừng giữa chừng rồi chạy lại sẽ dịch tiếp, không dịch lại từ đầu.
 - Không dịch: công thức, bảng (`tabular`), code, tài liệu tham khảo, tiêu đề paper (nằm trong preamble).
 
@@ -51,7 +53,7 @@ python -m paper_translator 2506.09985 --compile
 ```
 
 Đầu vào có thể là mã arXiv, link arXiv, hoặc thư mục / `.tar.gz` / `.tex` trên máy.
-Cuối mỗi lần chạy có thống kê, ví dụ: `612 sentences: 590 translated, 22 kept in English (placeholders lost), ...`.
+Cuối mỗi lần chạy có thống kê, ví dụ: `881 sentences: 820 translated, 61 translated piece by piece ..., 0 kept in English, ...`.
 
 ### Chọn model
 

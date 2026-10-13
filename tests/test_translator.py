@@ -57,10 +57,32 @@ def test_sentence_split_keeps_abbreviations():
         "We use e.g. ViT [[1]].", "Results by Smith et al. hold.", "Next one!"]
 
 
-def test_lost_placeholder_falls_back_to_english():
-    out, _, stats = run(r"See~\cite{x}. Fine here.", translate=lambda s: "Xem thêm." if "[[" in s else "Tốt.")
+def test_lost_placeholder_translates_piece_by_piece():
+    vi = {"We train it as in [[1]] with [[2]].": "Chúng tôi huấn luyện nó.",  # placeholders lost
+          "We train it as in": "Chúng tôi huấn luyện nó như trong", "with": "với", "Fine here.": "Tốt."}
+    out, _, stats = run(r"We train it as in~\cite{x} with $T$. Fine here.", translate=vi.get)
+    assert out == r"Chúng tôi huấn luyện nó như trong~\cite{x} với $T$. Tốt."
+    assert (stats.translated, stats.piecewise, stats.kept_english) == (1, 1, 0)
+
+
+def test_english_kept_when_pieces_fail_too():
+    out, _, stats = run(r"See~\cite{x}. Fine here.", translate=lambda s: "Xem [[7]]." if "See" in s else "Tốt.")
     assert out == r"See~\cite{x}. Tốt."
     assert (stats.translated, stats.kept_english) == (1, 1)
+
+
+class LosePlaceholders:
+    name, sentence_level = "lose", True
+
+    def translate_batch(self, texts):
+        return ["VI " + re.sub(r"\[\[\d+\]\]", "", t) for t in texts]
+
+
+def test_project_retranslates_failed_sentences_piecewise(tmp_path):
+    main, stats = translate_project(SAMPLE, str(tmp_path), LosePlaceholders(), Glossary.load())
+    assert stats.kept_english == 0 and stats.not_translated == 0 and stats.piecewise > 0
+    assert "\\cite{lecun2022}" in open(main, encoding="utf-8").read()
+    assert "EN: " in open(os.path.join(tmp_path, "problems.txt"), encoding="utf-8").read()
 
 
 def test_translator_output_is_escaped_for_latex():
