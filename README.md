@@ -24,8 +24,16 @@ mã arXiv ──► tải source LaTeX (.tar.gz) từ arxiv.org/e-print
 ```bash
 git clone https://github.com/1Tyson/paper-translator-vi
 cd paper-translator-vi
+python -m venv .venv                 # môi trường riêng, không đụng vào Python của hệ thống
+source .venv/bin/activate            # fish: source .venv/bin/activate.fish ; Windows: .venv\Scripts\activate
+
+# Máy KHÔNG có GPU NVIDIA: cài bản torch cho CPU trước (~200 MB thay vì vài GB)
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 pip install -r requirements.txt
 ```
+
+Mỗi lần mở terminal mới, chạy lại `source .venv/bin/activate` trước khi dùng.
 
 Lần chạy đầu sẽ tự tải model VinAI (khoảng 1,5 GB) về `~/.cache/huggingface`. Từ lần sau chạy offline được.
 

@@ -22,8 +22,12 @@ class VinAIBackend:
     sentence_level = True
 
     def __init__(self, model="vinai/vinai-translate-en2vi-v2", device=None, beams=4, batch_size=8):
-        import torch
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+        try:
+            import torch
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+        except ImportError as e:
+            raise SystemExit(f"{e}. The vinai backend needs torch and transformers: see 'Cài đặt' in README.md "
+                             "(python -m venv .venv, then pip install -r requirements.txt).") from e
 
         self.name = "vinai-" + model.rsplit("/", 1)[-1]
         self.torch = torch
