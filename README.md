@@ -13,8 +13,8 @@ Overleaf, và PDF (nếu máy có LaTeX). Việc dịch chạy bằng model trê
    ./PaperTranslatorVI-x86_64.AppImage
    ```
    Hoặc trên KDE: chuột phải → Properties → Permissions → tick "Is executable", rồi bấm đúp.
-3. Lần đầu: bấm **Cài đặt** để app tải thành phần dịch (torch + transformers, khoảng 1 GB bản CPU,
-   hoặc khoảng 3 GB nếu máy có GPU NVIDIA). Thành phần này lưu ở `~/.local/share/paper-translator-vi`, chỉ tải một lần.
+3. Lần đầu: bấm **Cài đặt** để app tải thành phần dịch (torch + transformers) vào `~/.local/share/paper-translator-vi`,
+   chỉ một lần. Chọn **bản CPU** (chiếm ~1 GB) hoặc **bản GPU NVIDIA** (chiếm ~6 GB, cần trống ~10 GB khi cài, dịch nhanh hơn).
 4. Nhập mã arXiv (ví dụ `2506.09985`) → bấm **Dịch → PDF**. Xong thì PDF tự mở.
    Kết quả nằm ở `~/Documents/PaperTranslator/<mã>/`.
 

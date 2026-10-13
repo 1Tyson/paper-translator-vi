@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "paper-translator-vi"
-version = "0.2.0"
+version = "0.2.1"
 description = "Translate arXiv papers (LaTeX source) from English to Vietnamese with local models"
 readme = "README.md"
 requires-python = ">=3.10"

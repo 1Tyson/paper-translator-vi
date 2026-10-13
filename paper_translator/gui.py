@@ -25,6 +25,8 @@ APP_NAME = "Paper Translator VI"
 DATA_DIR = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "paper-translator-vi")
 USER_LIBS = os.path.join(DATA_DIR, f"pylib-{sys.version_info.major}.{sys.version_info.minor}")
 DEFAULT_OUT = os.path.join(os.path.expanduser("~/Documents"), "PaperTranslator")
+INSTALL_TMP = os.path.join(DATA_DIR, "tmp")
+CPU_GB, GPU_GB = 1, 6  # approximate installed size of torch + transformers
 TEX_INSTALL = "sudo pacman -S --needed texlive texlive-langother"
 ICON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.svg")
 
@@ -190,8 +192,8 @@ class Window(QWidget):
             self.model_status.setText("Thành phần dịch VinAI: đã cài ✓")
             self.install_btn.setVisible(False)
         else:
-            size = "khoảng 3 GB (có GPU NVIDIA)" if has_nvidia_gpu() else "khoảng 1 GB (bản CPU)"
-            self.model_status.setText(f"Thành phần dịch VinAI: chưa cài, cần tải {size}, chỉ một lần.")
+            self.model_status.setText(f"Thành phần dịch VinAI: chưa cài (bản CPU ~{CPU_GB} GB"
+                                      + (f", bản GPU ~{GPU_GB} GB" if has_nvidia_gpu() else "") + "), chỉ cài một lần.")
             self.install_btn.setVisible(True)
         if latex_available():
             self.tex_status.setText("LaTeX để xuất PDF: đã có ✓")
@@ -279,21 +281,45 @@ class Window(QWidget):
 
     # ------------------------------------------------------------ install model libraries
     def install_model_libs(self):
-        gpu = has_nvidia_gpu()
-        msg = ("Sẽ tải torch (bản CUDA cho GPU NVIDIA, khoảng 3 GB)" if gpu else "Sẽ tải torch bản CPU (khoảng 1 GB)")
-        msg += f" và transformers vào:\n{USER_LIBS}\n\nChỉ cần làm một lần. Tiếp tục?"
-        if QMessageBox.question(self, "Cài thành phần dịch", msg) != QMessageBox.Yes:
+        existing = DATA_DIR
+        while not os.path.exists(existing):
+            existing = os.path.dirname(existing)
+        free_gb = shutil.disk_usage(existing).free / 1e9
+        box = QMessageBox(self)
+        box.setWindowTitle("Cài thành phần dịch")
+        box.setText(f"Tải torch và transformers vào:\n{USER_LIBS}\n\nChỉ cần làm một lần. "
+                    f"Ổ đĩa còn trống: {free_gb:.1f} GB.\n\n"
+                    f"• Bản CPU: chiếm khoảng {CPU_GB} GB (cần trống ~{CPU_GB * 2} GB khi cài). Dịch chậm hơn.\n"
+                    f"• Bản GPU NVIDIA (CUDA): chiếm khoảng {GPU_GB} GB (cần trống ~{GPU_GB + 4} GB khi cài). Dịch nhanh.")
+        cpu = box.addButton("Bản CPU", QMessageBox.AcceptRole)
+        gpu = box.addButton("Bản GPU NVIDIA", QMessageBox.AcceptRole) if has_nvidia_gpu() else None
+        box.addButton("Hủy", QMessageBox.RejectRole)
+        box.setDefaultButton(cpu)
+        box.exec()
+        if box.clickedButton() not in (cpu, gpu) or box.clickedButton() is None:
+            return
+        use_gpu = box.clickedButton() is gpu
+        need = GPU_GB + 4 if use_gpu else CPU_GB * 2
+        if free_gb < need and QMessageBox.warning(
+                self, "Thiếu dung lượng",
+                f"Cần trống khoảng {need} GB nhưng chỉ còn {free_gb:.1f} GB. Vẫn thử cài?",
+                QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
             return
         os.makedirs(USER_LIBS, exist_ok=True)
-        self.queue = [(c[0], c[1:]) for c in install_commands(gpu)]
+        os.makedirs(INSTALL_TMP, exist_ok=True)
+        self.queue = [(c[0], c[1:]) for c in install_commands(use_gpu)]
         self.stage.setText("Đang tải thành phần dịch…")
         self.progress.setRange(0, 0)
         self.next_install(0)
 
     def next_install(self, code):
+        if code != 0 or not self.queue:
+            shutil.rmtree(INSTALL_TMP, ignore_errors=True)
         if code != 0:
             self.queue = []
-            self.stage.setText("Cài đặt lỗi, xem log bên dưới (kiểm tra kết nối mạng rồi thử lại).")
+            full = "No space left on device" in self.log.toPlainText()[-3000:]
+            self.stage.setText("Cài đặt lỗi: hết dung lượng ổ đĩa. Giải phóng bớt rồi thử lại, hoặc chọn bản CPU."
+                               if full else "Cài đặt lỗi, xem log bên dưới (kiểm tra kết nối mạng rồi thử lại).")
             return
         if not self.queue:
             if USER_LIBS not in sys.path:
@@ -301,7 +327,8 @@ class Window(QWidget):
             self.stage.setText("Đã cài xong thành phần dịch.")
             return
         program, args = self.queue.pop(0)
-        self.run(program, args, on_done=self.next_install)
+        # pip unpacks into TMPDIR first; /tmp is often a small RAM disk, so use the data folder instead.
+        self.run(program, args, env={"TMPDIR": INSTALL_TMP}, on_done=self.next_install)
 
     # ------------------------------------------------------------ translate
     def start(self):
